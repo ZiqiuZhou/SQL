@@ -4,7 +4,7 @@ USE test;
 （假定表允许对该列指定空值）.各个列必须以它们在表定义中出现的
 次序填充。
 */
-INSERT INTO customers
+INSERT INTO customers #customers后可以指定列名:(...)
 VALUES(
     NULL, # auto_increment
     'Pep E. LaPew',
