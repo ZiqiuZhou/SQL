@@ -1,6 +1,6 @@
 USE exercise;
 SHOW TABLES;
-
+/*
 -- 1、查询"01"课程比"02"课程成绩高的学生的信息及课程分数
 SELECT Student.*, c_id, s_score
 FROM Student
@@ -55,7 +55,7 @@ ORDER BY totalscore DESC;
 SELECT Count(t_id) AS teachercount
 FROM Teacher
 WHERE t_name REGEXP '李.';
-
+*/
 -- 7、查询学过"张三"老师授课的同学的信息 
 SELECT Student.*
 FROM Score
@@ -67,3 +67,26 @@ Course.t_id IN (
 INNER JOIN Student
 ON Score.s_id = Student.s_id;
 
+-- 8、查询没学过"张三"老师授课的同学的信息 
+SELECT Student.*
+FROM Student
+WHERE s_id NOT IN(
+    SELECT  Student.s_id
+    FROM Score
+    INNER JOIN Course
+    ON Score.c_id = Course.c_id AND
+    Course.t_id IN (
+        SELECT t_id FROM Teacher WHERE t_name = '张三'
+    )
+    INNER JOIN Student
+    ON Score.s_id = Student.s_id);
+
+-- 9、查询学过编号为"01"并且也学过编号为"02"的课程的同学的信息
+SELECT *
+FROM Student
+WHERE s_id IN(
+    SELECT Sc1.s_id
+    FROM Score AS Sc1, Score AS Sc2
+    WHERE Sc1.c_id = '01' AND Sc2.c_id = '02'
+    AND Sc1.s_id = Sc2.s_id
+);
