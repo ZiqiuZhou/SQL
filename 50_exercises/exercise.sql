@@ -55,7 +55,7 @@ ORDER BY totalscore DESC;
 SELECT Count(t_id) AS teachercount
 FROM Teacher
 WHERE t_name REGEXP '李.';
-*/
+
 -- 7、查询学过"张三"老师授课的同学的信息 
 SELECT Student.*
 FROM Score
@@ -90,3 +90,80 @@ WHERE s_id IN(
     WHERE Sc1.c_id = '01' AND Sc2.c_id = '02'
     AND Sc1.s_id = Sc2.s_id
 );
+
+-- 10、查询学过编号为"01"但是没有学过编号为"02"的课程的同学的信息
+#并集中去掉交集
+SELECT *
+FROM Student
+WHERE s_id IN(
+    SELECT s_id
+    FROM Score
+    WHERE c_id = '01'
+) 
+AND s_id NOT IN(
+    SELECT Sc1.s_id
+    FROM Score AS Sc1, Score AS Sc2
+    WHERE Sc1.c_id = '01' AND Sc2.c_id = '02'
+    AND Sc1.s_id = Sc2.s_id
+);
+
+-- 11、查询没有学全所有课程的同学的信息 
+#总学生去掉学全的人
+SELECT *
+FROM Student
+WHERE s_id NOT IN(
+    SELECT DISTINCT Sc1.s_id
+    FROM Score AS Sc1, Score AS Sc2, Score AS Sc3 
+    WHERE Sc1.c_id = '01' AND Sc2.c_id = '02' AND Sc3.c_id = '03'
+    AND Sc1.s_id = Sc2.s_id AND Sc2.s_id = Sc3.s_id AND Sc1.s_id = Sc3.s_id
+);
+#或者
+SELECT *
+FROM Student
+WHERE s_id NOT IN(
+    SELECT s_id
+    FROM Score
+    GROUP BY s_id
+    HAVING COUNT(c_id) = (SELECT COUNT(c_id) FROM Course) # count不会统计有缺失值的学生
+)
+
+-- 12、查询至少有一门课与学号为"01"的同学所学相同的同学的信息
+SELECT *
+FROM Student
+WHERE s_id IN(
+    SELECT s_id
+    FROM Score
+    WHERE c_id NOT IN(
+        SELECT c_id
+        FROM Score
+        WHERE s_id = '01'
+    )
+    UNION # 并上没有选过课的
+    SELECT s_id
+    FROM Student
+    WHERE s_id NOT IN(
+        SELECT s_id
+        FROM Score
+    )
+);
+*/
+-- 13、查询和"01"号的同学学习的课程完全相同的其他同学的信息 
+SELECT *
+FROM Student
+WHERE s_id IN(
+SELECT DISTINCT s_id
+FROM Score
+WHERE c_id IN(  # IN 的逻辑等同于OR,筛选出来的是选课在01, 02, 03中间,未必全选
+    SELECT c_id
+    FROM Score
+    WHERE s_id = '01'
+)
+AND s_id IN(
+SELECT s_id
+FROM Score
+GROUP BY s_id
+HAVING COUNT(c_id) = (SELECT COUNT(c_id)
+                     FROM Score
+                     WHERE s_id = '01')));
+
+
