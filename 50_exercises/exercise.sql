@@ -1,5 +1,7 @@
 USE exercise;
 SHOW TABLES;
+# 17
+
 /*
 -- 1、查询"01"课程比"02"课程成绩高的学生的信息及课程分数
 SELECT Student.*, c_id, s_score
@@ -68,18 +70,16 @@ INNER JOIN Student
 ON Score.s_id = Student.s_id;
 
 -- 8、查询没学过"张三"老师授课的同学的信息 
-SELECT Student.*
+SELECT *
 FROM Student
 WHERE s_id NOT IN(
-    SELECT  Student.s_id
+    SELECT s_id
     FROM Score
     INNER JOIN Course
     ON Score.c_id = Course.c_id AND
     Course.t_id IN (
         SELECT t_id FROM Teacher WHERE t_name = '张三'
-    )
-    INNER JOIN Student
-    ON Score.s_id = Student.s_id);
+    ));
 
 -- 9、查询学过编号为"01"并且也学过编号为"02"的课程的同学的信息
 SELECT *
@@ -146,12 +146,12 @@ WHERE s_id IN(
         FROM Score
     )
 );
-*/
+
 -- 13、查询和"01"号的同学学习的课程完全相同的其他同学的信息 
 SELECT *
 FROM Student
 WHERE s_id IN(
-SELECT DISTINCT s_id
+SELECT s_id
 FROM Score
 WHERE c_id IN(  # IN 的逻辑等同于OR,筛选出来的是选课在01, 02, 03中间,未必全选
     SELECT c_id
@@ -166,4 +166,98 @@ HAVING COUNT(c_id) = (SELECT COUNT(c_id)
                      FROM Score
                      WHERE s_id = '01')));
 
+-- 14、查询没学过"张三"老师讲授的任一门课程的学生姓名 
+SELECT *
+FROM Student
+WHERE s_id NOT IN(
+    SELECT s_id
+    FROM Score
+    INNER JOIN Course
+    ON Score.c_id = Course.c_id AND
+    Course.t_id IN (
+        SELECT t_id FROM Teacher WHERE t_name = '张三')
+    );
 
+-- 15、查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩 
+SELECT Student.s_id, Student.s_name, AVG(s_score) AS average_score
+FROM Student
+INNER JOIN Score
+ON Student.s_id = Score.s_id AND s_score < 60
+GROUP BY Score.s_id
+HAVING COUNT(s_score) >= 2;
+
+-- 16、检索"01"课程分数小于60，按分数降序排列的学生信息
+SELECT Student.*, s_score
+FROM Student
+INNER JOIN Score
+ON Student.s_id = Score.s_id AND s_score < 60 AND c_id = '01'
+ORDER BY s_score DESC;
+*/
+-- 17、按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
+/*
+-- 18.查询各科成绩最高分、最低分和平均分：以如下形式显示：课程ID，课程name，最高分，最低分，平均分，及格率，中等率，优良率，优秀率
+--及格为>=60，中等为：70-80，优良为：80-90，优秀为：>=90
+
+CREATE VIEW largerthan60 AS
+SELECT c_id, 
+    COUNT(s_score) / (
+        SELECT COUNT(s_score)
+        FROM Score AS sc1 
+        GROUP BY sc1.c_id 
+        HAVING sc1.c_id = Score.c_id) AS ratio60
+FROM Score
+WHERE s_score >= 60
+GROUP BY c_id;
+
+CREATE VIEW largerthan70 AS
+SELECT c_id, 
+    COUNT(s_score) / (
+        SELECT COUNT(s_score)
+        FROM Score AS sc1 
+        GROUP BY sc1.c_id 
+        HAVING sc1.c_id = Score.c_id) AS ratio70
+FROM Score
+WHERE s_score >= 70 AND s_score < 80
+GROUP BY c_id;
+
+CREATE VIEW largerthan80 AS
+SELECT c_id, 
+    COUNT(s_score) / (
+        SELECT COUNT(s_score)
+        FROM Score AS sc1 
+        GROUP BY sc1.c_id 
+        HAVING sc1.c_id = Score.c_id) AS ratio80
+FROM Score
+WHERE s_score >= 80 AND s_score < 90
+GROUP BY c_id;
+
+CREATE VIEW largerthan90 AS
+SELECT c_id, 
+    COUNT(s_score) / (
+        SELECT COUNT(s_score)
+        FROM Score AS sc1 
+        GROUP BY sc1.c_id 
+        HAVING sc1.c_id = Score.c_id) AS ratio90
+FROM Score
+WHERE s_score >= 90
+GROUP BY c_id;
+
+CREATE VIEW partView AS
+SELECT Score.c_id, Course.c_name, MAX(s_score), MIN(s_score), AVG(s_score)
+FROM Score
+INNER JOIN Course
+ON Score.c_id = Course.c_id
+GROUP BY Score.c_id;
+
+SELECT partView.*, largerthan60.ratio60, largerthan70.ratio70,
+    largerthan80.ratio80, largerthan90.ratio90
+FROM partView
+LEFT OUTER JOIN largerthan60
+ON largerthan60.c_id = partView.c_id
+LEFT OUTER JOIN largerthan70
+ON largerthan70.c_id = partView.c_id
+LEFT OUTER JOIN largerthan80
+ON largerthan80.c_id = partView.c_id
+LEFT OUTER JOIN largerthan90
+ON largerthan90.c_id = partView.c_id;
+*/
