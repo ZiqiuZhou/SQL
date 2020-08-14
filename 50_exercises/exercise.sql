@@ -1,8 +1,7 @@
 USE exercise;
 SHOW TABLES;
-# 17
+# 17 19
 
-/*
 -- 1、查询"01"课程比"02"课程成绩高的学生的信息及课程分数
 SELECT Student.*, c_id, s_score
 FROM Student
@@ -192,9 +191,9 @@ FROM Student
 INNER JOIN Score
 ON Student.s_id = Score.s_id AND s_score < 60 AND c_id = '01'
 ORDER BY s_score DESC;
-*/
+
 -- 17、按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
-/*
+
 -- 18.查询各科成绩最高分、最低分和平均分：以如下形式显示：课程ID，课程name，最高分，最低分，平均分，及格率，中等率，优良率，优秀率
 --及格为>=60，中等为：70-80，优良为：80-90，优秀为：>=90
 
@@ -260,4 +259,37 @@ LEFT OUTER JOIN largerthan80
 ON largerthan80.c_id = partView.c_id
 LEFT OUTER JOIN largerthan90
 ON largerthan90.c_id = partView.c_id;
-*/
+
+
+-- 19、按各科成绩进行排序，并显示排名
+SELECT * FROM (
+SELECT c_id, s_score, @rank1 := @rank1 + 1 AS score_Rank
+FROM Score a, (SELECT @rank1 := 0) b
+WHERE c_id = '01'
+ORDER BY s_score DESC) AS Score1
+UNION
+SELECT * FROM (
+SELECT c_id, s_score, @rank2 := @rank2 + 1 AS score_Rank
+FROM Score a, (SELECT @rank2 := 0) b
+WHERE c_id = '02'
+ORDER BY s_score DESC) AS Score2
+UNION
+SELECT * FROM (
+SELECT c_id, s_score, @rank3 := @rank3 + 1 AS score_Rank
+FROM Score a, (SELECT @rank3 := 0) b
+WHERE c_id = '03'
+ORDER BY s_score DESC) AS Score3;
+
+-- 20、查询学生的总成绩并进行排名
+SELECT s_id, SUM(s_score) AS totalscore, @rank := @rank + 1 AS score_Rank
+FROM Score a, (SELECT @rank := 0) b
+GROUP BY s_id
+ORDER BY totalscore DESC;
+
+-- 21、查询不同老师所教不同课程平均分从高到低显示 
+SELECT Teacher.t_id, Course.c_id, AVG(Score.s_score) AS average_score
+From Course
+INNER JOIN Teacher ON Teacher.t_id = Course.t_id
+INNER JOIN Score ON Course.c_id = Score.c_id
+GROUP BY c_id
+ORDER BY average_score DESC;
