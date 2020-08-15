@@ -1,7 +1,7 @@
 USE exercise;
 SHOW TABLES;
 # 17 19
-
+/*
 -- 1、查询"01"课程比"02"课程成绩高的学生的信息及课程分数
 SELECT Student.*, c_id, s_score
 FROM Student
@@ -293,3 +293,74 @@ INNER JOIN Teacher ON Teacher.t_id = Course.t_id
 INNER JOIN Score ON Course.c_id = Score.c_id
 GROUP BY c_id
 ORDER BY average_score DESC;
+
+-- 22、查询所有课程的成绩第2名到第3名的学生信息及该课程成绩
+SELECT Student.*, wholetable.s_score
+    FROM(
+    SELECT s_id, s_score
+    FROM (
+        SELECT s_id, c_id, s_score, @rank1 := @rank1 + 1 AS score_Rank
+        FROM Score a, (SELECT @rank1 := 0) b
+        WHERE c_id = '01' 
+        ORDER BY s_score DESC) AS Score1
+    WHERE Score1.score_Rank IN (2, 3)
+    UNION
+    SELECT s_id, s_score
+    FROM (
+        SELECT s_id, c_id, s_score, @rank2 := @rank2 + 1 AS score_Rank
+        FROM Score a, (SELECT @rank2 := 0) b
+        WHERE c_id = '02'
+        ORDER BY s_score DESC) AS Score2
+    WHERE Score2.score_Rank IN (2, 3)
+    UNION
+    SELECT s_id, s_score
+    FROM (
+        SELECT s_id, c_id, s_score, @rank3 := @rank3 + 1 AS score_Rank
+        FROM Score a, (SELECT @rank3 := 0) b
+        WHERE c_id = '03'
+        ORDER BY s_score DESC) AS Score3
+    WHERE Score3.score_Rank IN (2, 3)) AS wholetable
+INNER JOIN Student
+ON Student.s_id = wholetable.s_id;
+*/
+-- 23、统计各科成绩各分数段人数：课程编号,课程名称,[100-85],[85-70],[70-60],[0-60]及所占百分比
+SELECT Score.c_id, Course.c_name
+FROM Score
+LEFT OUTER JOIN Course
+ON Score.c_id = Course.c_id 
+GROUP BY Score.c_id, Course.c_name;
+
+SELECT Course.c_id, Course.c_name, over85.count85, over70.count70, over60.count60, over0.count0
+ FROM Course
+LEFT OUTER JOIN (SELECT c_id, COUNT(s_score) AS count85 FROM Score Where s_score > 85
+    GROUP BY c_id) AS over85
+ON Course.c_id = over85.c_id
+LEFT OUTER JOIN 
+    (SELECT c_id, COUNT(s_score) AS count70 FROM Score Where s_score > 70 AND s_score <= 85
+    GROUP BY c_id) AS over70
+ON Course.c_id = over70.c_id
+LEFT OUTER JOIN 
+    (SELECT c_id, COUNT(s_score) AS count60 FROM Score Where s_score >= 60 AND s_score <= 70
+    GROUP BY c_id) AS over60
+ON Course.c_id = over60.c_id
+LEFT OUTER JOIN 
+    (SELECT c_id, COUNT(s_score) AS count0 FROM Score Where s_score < 60
+    GROUP BY c_id) AS over0
+ON Course.c_id = over0.c_id;
+
+-- 24、查询学生平均成绩及其名次 
+SELECT a.*, @rank := @rank + 1 AS score_Rank FROM 
+    (SELECT s_id, AVG(s_score) AS average_score
+    FROM Score 
+    GROUP BY s_id
+    ORDER BY average_score DESC) AS a, (SELECT @rank := 0) b;
+
+-- 25、查询各科成绩前三名的记录
+SELECT s_id, c_id, @rank := @rank + 1 AS score_Rank
+FROM Score, (SELECT @rank := 0) b
+WHERE c_id = '01'
+ORDER BY s_score DESC;
+
+
+
+
