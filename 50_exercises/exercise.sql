@@ -1,7 +1,7 @@
 USE exercise;
 SHOW TABLES;
 # 17 19
-/*
+
 -- 1、查询"01"课程比"02"课程成绩高的学生的信息及课程分数
 SELECT Student.*, c_id, s_score
 FROM Student
@@ -322,13 +322,8 @@ SELECT Student.*, wholetable.s_score
     WHERE Score3.score_Rank IN (2, 3)) AS wholetable
 INNER JOIN Student
 ON Student.s_id = wholetable.s_id;
-*/
+
 -- 23、统计各科成绩各分数段人数：课程编号,课程名称,[100-85],[85-70],[70-60],[0-60]及所占百分比
-SELECT Score.c_id, Course.c_name
-FROM Score
-LEFT OUTER JOIN Course
-ON Score.c_id = Course.c_id 
-GROUP BY Score.c_id, Course.c_name;
 
 SELECT Course.c_id, Course.c_name, over85.count85, over70.count70, over60.count60, over0.count0
  FROM Course
@@ -361,6 +356,115 @@ FROM Score, (SELECT @rank := 0) b
 WHERE c_id = '01'
 ORDER BY s_score DESC;
 
+-- 26、查询每门课程被选修的学生数 
+SELECT c_id, COUNT(s_id)
+FROM Score 
+GROUP BY c_id;
+
+-- 27、查询出只有两门课程的全部学生的学号和姓名 
+SELECT Student.s_id, Student.s_name
+FROM Student 
+INNER JOIN (
+    SELECT s_id
+    FROM Score 
+    GROUP BY s_id
+    HAVING COUNT(c_id) = 2) AS score1
+WHERE Student.s_id = score1.s_id;
+
+-- 28、查询男生、女生人数 
+SELECT COUNT(s_id) AS count
+FROM Student
+GROUP BY s_sex;
+
+-- 29、查询名字中含有"风"字的学生信息
+SELECT *
+FROM Student
+WHERE s_name LIKE '%风%';
+
+-- 30、查询同名同性学生名单，并统计同名人数 
+SELECT Stu1.s_name, COUNT(Stu1.s_name)
+FROM Student AS Stu1, Student AS Stu2
+WHERE Stu1.s_name = Stu2.s_name AND Stu1.s_id != Stu2.s_id;
+
+-- 31、查询1990年出生的学生名单
+SELECT s_name
+FROM Student
+WHERE s_birth REGEXP '1990.';
+
+-- 32、查询每门课程的平均成绩，结果按平均成绩降序排列，平均成绩相同时，按课程编号升序排列 
+ SELECT c_id, AVG(s_score) AS average
+ FROM Score
+ GROUP BY c_id
+ ORDER BY  average DESC, c_id;
+
+-- 33、查询平均成绩大于等于85的所有学生的学号、姓名和平均成绩
+SELECT  Student.s_id, s_name, AVG(s_score) AS average
+FROM Student
+INNER JOIN Score
+ON Student.s_id = Score.s_id
+GROUP BY s_id
+HAVING average >= 85;
+
+-- 34、查询课程名称为"数学"，且分数低于60的学生姓名和分数 
+SELECT Student.s_name, Score.s_score
+FROM Student
+INNER JOIN Score 
+ON Student.s_id = Score.s_id
+WHERE Student.s_id IN(
+    SELECT s_id FROM Score WHERE s_score < 60)
+    AND Score.c_id IN (SELECT c_id FROM Course WHERE c_name = '数学');
+
+-- 35、查询所有学生的课程及分数情况； 
+select a.s_id,a.s_name,
+					SUM(case c.c_name when '语文' then b.s_score else 0 end) as '语文',
+					SUM(case c.c_name when '数学' then b.s_score else 0 end) as '数学',
+					SUM(case c.c_name when '英语' then b.s_score else 0 end) as '英语',
+					SUM(b.s_score) as  '总分'
+		from student a left join score b on a.s_id = b.s_id 
+		left join course c on b.c_id = c.c_id 
+		GROUP BY a.s_id,a.s_name;
+
+-- 36、查询任何一门课程成绩在70分以上的姓名、课程名称和分数； 
+SELECT Student.s_name, Score.c_id, s_score
+FROM Student
+INNER JOIN Score
+ON Student.s_id = Score.s_id
+AND 
+Score.s_id IN(
+    SELECT s_id
+    FROM Score
+    GROUP BY s_id
+    HAVING MIN(s_score) > 70
+);
+
+-- 37、查询不及格的课程
+SELECT DISTINCT Score.c_id, Course.c_name
+FROM Score
+INNER JOIN Course
+ON Score.c_id = Course.c_id
+AND s_score < 60;
+
+#--38、查询课程编号为01且课程成绩在80分以上的学生的学号和姓名
+SELECT Student.s_id, Student.s_name
+FROM Student
+INNER JOIN Score
+ON Student.s_id = Score.s_id
+AND Score.c_id = '01' AND Score.s_score >= 80;
+
+-- 39、求每门课程的学生人数 
+SELECT COUNT(*) from Score
+GROUP BY c_id;
+
+-- 40、查询选修"张三"老师所授课程的学生中，成绩最高的学生信息及其成绩
+SELECT Student.*, Score.s_score
+FROM Student
+INNER JOIN Score ON Student.s_id = Score.s_id AND
+c_id IN(
+    SELECT c_id 
+    FROM Course 
+    WHERE t_id IN(SELECT t_id FROM Teacher WHERE t_name = '张三')
+)
+LIMIT 1;
 
 
 
